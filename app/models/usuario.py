@@ -37,6 +37,7 @@ class Usuario(UserMixin, db.Model):
     rol = db.Column(db.String(20), nullable=False, default='cliente')  # admin, artista, cliente
     biografia = db.Column(db.Text)
     foto_perfil = db.Column(db.String(255))
+    foto_banner = db.Column(db.String(255))
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
     estado = db.Column(db.String(20), default='activo')  # activo, bloqueado
     

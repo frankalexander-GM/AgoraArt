@@ -90,35 +90,115 @@ def perfil():
     """
     return render_template('cliente/perfil.html')
 
+def _allowed_file(filename):
+    """Verificar si la extensión del archivo es permitida"""
+    ALLOWED = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED
+
+def _save_upload(file, subfolder):
+    """Guardar archivo subido y retornar la URL relativa"""
+    import os, uuid
+    from flask import current_app
+    
+    if not file or file.filename == '':
+        return None
+    if not _allowed_file(file.filename):
+        return None
+    
+    upload_dir = os.path.join(current_app.static_folder, 'uploads', subfolder)
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    filepath = os.path.join(upload_dir, filename)
+    file.save(filepath)
+    
+    return url_for('static', filename=f'uploads/{subfolder}/{filename}')
+
 @cliente_bp.route('/perfil/editar', methods=['GET', 'POST'])
 @login_required
 @requiere_cliente
 def editar_perfil():
     """
-    Editar perfil del cliente
+    Editar perfil del cliente (con soporte para foto de perfil y banner)
     """
-    if request.method == 'POST':
-        # Obtener datos del formulario
-        data = {
-            'nombre': request.form.get('nombre'),
-            'username': request.form.get('username'),
-            'email': request.form.get('email'),
-            'biografia': request.form.get('biografia', '')
-        }
+    try:
+        if request.method == 'POST':
+            data = {
+                'nombre': request.form.get('nombre'),
+                'username': request.form.get('username'),
+                'email': request.form.get('email'),
+                'biografia': request.form.get('biografia', '')
+            }
+            
+            errores = []
+            
+            if not data.get('nombre', '').strip():
+                errores.append('El nombre es obligatorio')
+            if not data.get('username', '').strip():
+                errores.append('El username es obligatorio')
+            elif len(data['username']) < 3:
+                errores.append('El username debe tener al menos 3 caracteres')
+            if not data.get('email', '').strip():
+                errores.append('El email es obligatorio')
+            elif '@' not in data['email'] or '.' not in data['email']:
+                errores.append('El email no es válido')
+            
+            # Validar archivos
+            foto_perfil = request.files.get('foto_perfil')
+            if foto_perfil and foto_perfil.filename:
+                if not _allowed_file(foto_perfil.filename):
+                    errores.append('Formato de foto de perfil no válido. Usa JPG, PNG, GIF o WebP.')
+            
+            foto_banner = request.files.get('foto_banner')
+            if foto_banner and foto_banner.filename:
+                if not _allowed_file(foto_banner.filename):
+                    errores.append('Formato de foto de portada no válido. Usa JPG, PNG, GIF o WebP.')
+            
+            if not errores:
+                service_factory = get_service_factory(db.session)
+                auth_service = service_factory.get_auth_service()
+                
+                if auth_service.validar_username_duplicado(data['username'], current_user.id_usuario):
+                    errores.append('El username ya está en uso')
+                if auth_service.validar_email_duplicado(data['email'], current_user.id_usuario):
+                    errores.append('El email ya está registrado')
+            
+            if not errores:
+                # Guardar fotos si se subieron
+                if foto_perfil and foto_perfil.filename:
+                    url_perfil = _save_upload(foto_perfil, 'perfiles')
+                    if url_perfil:
+                        data['foto_perfil'] = url_perfil
+                
+                if foto_banner and foto_banner.filename:
+                    url_banner = _save_upload(foto_banner, 'banners')
+                    if url_banner:
+                        data['foto_banner'] = url_banner
+                
+                usuario_service = service_factory.get_usuario_service()
+                exitoso, usuario_actualizado = usuario_service.actualizar_usuario(current_user.id_usuario, data)
+                
+                if exitoso:
+                    flash('Perfil actualizado correctamente', 'success')
+                    return redirect(url_for('cliente.dashboard'))
+                else:
+                    flash('Error al actualizar el perfil.', 'error')
+            else:
+                for error in errores:
+                    flash(error, 'error')
         
-        # Validar y actualizar
-        service_factory = get_service_factory()
-        usuario_service = service_factory.get_usuario_service()
-        
-        exitoso, usuario_actualizado = usuario_service.actualizar_usuario(current_user.id_usuario, data)
-        
-        if exitoso:
-            flash('Perfil actualizado correctamente', 'success')
-            return redirect(url_for('cliente.perfil'))
-        else:
-            flash('Error al actualizar el perfil', 'error')
-    
-    return render_template('cliente/editar_perfil.html')
+        return render_template('cliente/editar_perfil.html')
+    except Exception as e:
+        import traceback
+        print(f"ERROR en editar_perfil cliente: {traceback.format_exc()}")
+        flash('Error al cargar la página de edición.', 'error')
+        return redirect(url_for('cliente.dashboard'))
+    finally:
+        try:
+            db.session.remove()
+        except:
+            pass
 
 @cliente_bp.route('/artistas-siguiendo')
 @login_required

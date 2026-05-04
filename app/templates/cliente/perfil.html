@@ -1,2 +1,365 @@
-{% extends "auth/perfil.html" %}
-<!-- Reutilizamos el perfil de auth para consistencia -->
+{% extends "base.html" %}
+
+{% block title %}{{ current_user.nombre }} — Ágora Art{% endblock %}
+
+{% block head %}
+<style>
+    /* ================================================ */
+    /* PERFIL CLIENTE — BEHANCE / DRIBBBLE PRO STYLE     */
+    /* ================================================ */
+    body { background: #FAFAFA !important; }
+
+    /* ---- HERO BANNER ---- */
+    .hero-banner {
+        width: 100%;
+        height: 280px;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-banner-bg {
+        width: 100%; height: 100%; object-fit: cover;
+    }
+    .hero-banner-default {
+        width: 100%; height: 100%;
+        background: linear-gradient(135deg, #0D0B21 0%, #1B1145 40%, #3B1F7E 70%, #8B5CF6 100%);
+        position: relative;
+    }
+    .hero-banner-default::after {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        opacity: 0.5;
+    }
+    .hero-fade {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        height: 120px;
+        background: linear-gradient(transparent, #FAFAFA);
+    }
+    .hero-edit-btn {
+        position: absolute; top: 20px; right: 20px;
+        background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);
+        color: white; border: none; border-radius: 12px;
+        padding: 10px 18px; font-size: 13px; font-weight: 600;
+        cursor: pointer; transition: 0.3s; text-decoration: none;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .hero-edit-btn:hover {
+        background: rgba(0,0,0,0.6); color: white;
+    }
+
+    /* ---- PROFILE CARD ---- */
+    .profile-card {
+        max-width: 860px;
+        margin: -80px auto 0;
+        padding: 0 24px;
+        position: relative; z-index: 5;
+    }
+    .profile-card-inner {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+        padding: 40px;
+        text-align: center;
+    }
+
+    /* Avatar */
+    .pro-avatar {
+        width: 130px; height: 130px;
+        border-radius: 50%;
+        margin: -100px auto 20px;
+        border: 5px solid white;
+        box-shadow: 0 6px 30px rgba(139,92,246,0.25);
+        overflow: hidden;
+        background: linear-gradient(135deg, #8B5CF6, #FF2D95);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-family: 'Outfit', sans-serif;
+        font-size: 52px; font-weight: 800;
+    }
+    .pro-avatar img {
+        width: 100%; height: 100%; object-fit: cover;
+    }
+
+    /* Name & username */
+    .pro-name {
+        font-family: 'Outfit', sans-serif;
+        font-size: 30px; font-weight: 800;
+        color: #111; margin-bottom: 4px;
+    }
+    .pro-username {
+        font-size: 16px; color: #8B5CF6; font-weight: 600;
+        margin-bottom: 16px;
+    }
+
+    /* Bio */
+    .pro-bio {
+        color: #555; font-size: 15px; line-height: 1.7;
+        max-width: 520px; margin: 0 auto 24px;
+    }
+
+    /* Stats bar */
+    .pro-stats {
+        display: flex; justify-content: center; gap: 40px;
+        padding: 20px 0;
+        border-top: 1px solid #f0f0f0;
+        border-bottom: 1px solid #f0f0f0;
+        margin-bottom: 24px;
+    }
+    .pro-stat {
+        text-align: center;
+    }
+    .pro-stat-value {
+        font-family: 'Outfit', sans-serif;
+        font-size: 24px; font-weight: 800; color: #111;
+        display: block;
+    }
+    .pro-stat-label {
+        font-size: 12px; color: #999;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+
+    /* Action buttons */
+    .pro-actions {
+        display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+    }
+    .btn-pro {
+        padding: 12px 28px; border-radius: 50px;
+        font-weight: 700; font-size: 14px; border: none;
+        cursor: pointer; font-family: 'Outfit', sans-serif;
+        transition: all 0.25s; text-decoration: none;
+        display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-pro-primary {
+        background: #8B5CF6; color: white;
+        box-shadow: 0 4px 15px rgba(139,92,246,0.25);
+    }
+    .btn-pro-primary:hover {
+        background: #7C3AED; transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(139,92,246,0.35);
+        color: white;
+    }
+    .btn-pro-outline {
+        background: transparent; color: #111;
+        border: 2px solid #e0e0e0;
+    }
+    .btn-pro-outline:hover {
+        border-color: #8B5CF6; color: #8B5CF6;
+        transform: translateY(-2px);
+    }
+
+    /* ---- DETAILS GRID ---- */
+    .details-section {
+        max-width: 860px;
+        margin: 30px auto 60px;
+        padding: 0 24px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    .detail-card {
+        background: white;
+        border-radius: 20px;
+        padding: 28px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .detail-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
+    .detail-card-icon {
+        width: 44px; height: 44px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; margin-bottom: 16px;
+    }
+    .icon-purple { background: rgba(139,92,246,0.1); color: #8B5CF6; }
+    .icon-pink { background: rgba(255,45,149,0.1); color: #FF2D95; }
+    .icon-blue { background: rgba(23,105,255,0.1); color: #1769FF; }
+    .icon-green { background: rgba(52,199,89,0.1); color: #34C759; }
+
+    .detail-card h4 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 14px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        color: #999; margin-bottom: 10px;
+    }
+    .detail-card p {
+        font-size: 15px; color: #333; margin: 0; line-height: 1.5;
+    }
+    .detail-card .detail-value {
+        font-family: 'Outfit', sans-serif;
+        font-size: 22px; font-weight: 800; color: #111;
+    }
+
+    /* Quick links */
+    .quick-links {
+        display: flex; flex-direction: column; gap: 10px;
+    }
+    .quick-link {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 14px; border-radius: 12px;
+        font-size: 14px; color: #333; font-weight: 600;
+        text-decoration: none; transition: 0.2s;
+        background: #f8f8f8;
+    }
+    .quick-link:hover {
+        background: rgba(139,92,246,0.08); color: #8B5CF6;
+        transform: translateX(4px);
+    }
+    .quick-link i {
+        color: #8B5CF6; width: 18px; text-align: center;
+    }
+
+    /* Badge */
+    .role-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 16px; border-radius: 20px;
+        font-size: 13px; font-weight: 700;
+    }
+    .badge-cliente { background: rgba(23,105,255,0.1); color: #1769FF; }
+    .badge-artista { background: rgba(139,92,246,0.1); color: #8B5CF6; }
+    .badge-admin { background: rgba(255,45,85,0.1); color: #FF2D55; }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+        .hero-banner { height: 200px; }
+        .profile-card-inner { padding: 30px 20px; }
+        .pro-avatar { width: 110px; height: 110px; font-size: 42px; margin-top: -80px; }
+        .pro-name { font-size: 24px; }
+        .pro-stats { gap: 24px; }
+        .pro-stat-value { font-size: 20px; }
+        .details-section { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ===== BANNER HERO ===== -->
+<div class="hero-banner">
+    {% if current_user.foto_banner %}
+        <img src="{{ current_user.foto_banner }}" alt="Portada" class="hero-banner-bg">
+    {% else %}
+        <div class="hero-banner-default"></div>
+    {% endif %}
+    <div class="hero-fade"></div>
+    <a href="{{ url_for('cliente.editar_perfil') }}" class="hero-edit-btn">
+        <i class="fas fa-pen"></i> Editar Perfil
+    </a>
+</div>
+
+<!-- ===== PROFILE CARD ===== -->
+<div class="profile-card">
+    <div class="profile-card-inner">
+        <!-- Avatar -->
+        <div class="pro-avatar">
+            {% if current_user.foto_perfil %}
+                <img src="{{ current_user.foto_perfil }}" alt="{{ current_user.nombre }}">
+            {% else %}
+                {{ current_user.nombre[0]|upper }}
+            {% endif %}
+        </div>
+
+        <!-- Name -->
+        <h1 class="pro-name">{{ current_user.nombre }}</h1>
+        <p class="pro-username">@{{ current_user.username }}</p>
+
+        <!-- Role badge -->
+        <div style="margin-bottom: 16px;">
+            {% if current_user.is_admin() %}
+                <span class="role-badge badge-admin"><i class="fas fa-shield-halved"></i> Administrador</span>
+            {% elif current_user.is_artista() %}
+                <span class="role-badge badge-artista"><i class="fas fa-palette"></i> Artista</span>
+            {% else %}
+                <span class="role-badge badge-cliente"><i class="fas fa-gem"></i> Cliente</span>
+            {% endif %}
+        </div>
+
+        <!-- Bio -->
+        {% if current_user.biografia %}
+            <p class="pro-bio">{{ current_user.biografia }}</p>
+        {% else %}
+            <p class="pro-bio" style="color:#bbb; font-style:italic;">Aún no has agregado una biografía. ¡Cuéntale al mundo sobre ti!</p>
+        {% endif %}
+
+        <!-- Stats -->
+        <div class="pro-stats">
+            <div class="pro-stat">
+                <span class="pro-stat-value">{{ current_user.obras_favoritas|length if current_user.obras_favoritas else 0 }}</span>
+                <span class="pro-stat-label">Favoritos</span>
+            </div>
+            <div class="pro-stat">
+                <span class="pro-stat-value">{{ current_user.artistas_seguidos|length if current_user.artistas_seguidos else 0 }}</span>
+                <span class="pro-stat-label">Siguiendo</span>
+            </div>
+            <div class="pro-stat">
+                <span class="pro-stat-value">{{ current_user.lienzos.count() if current_user.lienzos else 0 }}</span>
+                <span class="pro-stat-label">Lienzos</span>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="pro-actions">
+            <a href="{{ url_for('cliente.editar_perfil') }}" class="btn-pro btn-pro-primary">
+                <i class="fas fa-pen-to-square"></i> Editar Perfil
+            </a>
+            <a href="{{ url_for('auth.cambiar_password') }}" class="btn-pro btn-pro-outline">
+                <i class="fas fa-lock"></i> Cambiar Contraseña
+            </a>
+            <a href="{{ url_for('cliente.dashboard') }}" class="btn-pro btn-pro-outline">
+                <i class="fas fa-th-large"></i> Mi Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ===== DETAIL CARDS ===== -->
+<div class="details-section">
+    <!-- Contacto -->
+    <div class="detail-card">
+        <div class="detail-card-icon icon-purple">
+            <i class="fas fa-envelope"></i>
+        </div>
+        <h4>Contacto</h4>
+        <p>{{ current_user.email }}</p>
+    </div>
+
+    <!-- Miembro desde -->
+    <div class="detail-card">
+        <div class="detail-card-icon icon-green">
+            <i class="fas fa-calendar-check"></i>
+        </div>
+        <h4>Miembro desde</h4>
+        <p class="detail-value">{{ current_user.fecha_registro.strftime('%d %b %Y') }}</p>
+        <p style="color:#999; font-size:13px; margin-top:4px;">
+            {% if current_user.is_active() %}
+                <i class="fas fa-circle" style="color:#34C759; font-size:8px;"></i> Cuenta activa
+            {% else %}
+                <i class="fas fa-circle" style="color:#FF3B30; font-size:8px;"></i> Cuenta inactiva
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="detail-card" style="grid-column: 1 / -1;">
+        <div class="detail-card-icon icon-pink">
+            <i class="fas fa-bolt"></i>
+        </div>
+        <h4>Acciones Rápidas</h4>
+        <div class="quick-links" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <a href="{{ url_for('cliente.dashboard') }}" class="quick-link">
+                <i class="fas fa-th-large"></i> Mi Dashboard
+            </a>
+            <a href="{{ url_for('cliente.obras_favoritas') }}" class="quick-link">
+                <i class="fas fa-heart"></i> Mis Favoritos
+            </a>
+            <a href="{{ url_for('cliente.artistas_siguiendo') }}" class="quick-link">
+                <i class="fas fa-users"></i> Artistas que Sigo
+            </a>
+            <a href="{{ url_for('cliente.lienzos') }}" class="quick-link">
+                <i class="fas fa-layer-group"></i> Mis Lienzos
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

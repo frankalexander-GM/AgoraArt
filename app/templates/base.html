@@ -383,7 +383,13 @@
                 <a href="{{ url_for('cliente.carrito') }}" class="be-btn-ghost"><i class="fas fa-bag-shopping"></i></a>
                 {% endif %}
                 <div style="position:relative;">
+                    {% if current_user.foto_perfil %}
+                    <div class="be-avatar" id="avatar-btn" style="padding:0; overflow:hidden;">
+                        <img src="{{ current_user.foto_perfil }}" alt="{{ current_user.nombre }}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                    </div>
+                    {% else %}
                     <div class="be-avatar" id="avatar-btn">{{ current_user.nombre[0]|upper }}</div>
+                    {% endif %}
                     <div class="be-dropdown" id="user-dropdown">
                         <div class="be-dropdown-header">
                             <strong>{{ current_user.nombre }}</strong>

@@ -1,2 +1,299 @@
-{% extends "auth/editar_perfil.html" %}
-<!-- Reutilizamos el editar_perfil de auth para consistencia -->
+{% extends "base.html" %}
+
+{% block title %}Editar Perfil — Ágora Art{% endblock %}
+
+{% block head %}
+<style>
+    .edit-wrapper {
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 50px 20px 80px;
+    }
+    .edit-header { text-align: center; margin-bottom: 40px; }
+    .edit-header h1 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 32px; font-weight: 800; margin-bottom: 8px; color: #111;
+    }
+    .edit-header p { color: #767676; font-size: 15px; }
+
+    /* ---- BANNER ---- */
+    .banner-upload {
+        position: relative; width: 100%; height: 200px;
+        border-radius: 24px; overflow: hidden; cursor: pointer;
+        border: 2px dashed #d0d0d0; transition: 0.3s;
+        margin-bottom: 0;
+    }
+    .banner-upload:hover { border-color: #8B5CF6; box-shadow: 0 0 0 4px rgba(139,92,246,0.08); }
+    .banner-upload.has-img { border: none; }
+    .banner-upload img { width: 100%; height: 100%; object-fit: cover; }
+    .banner-placeholder {
+        width: 100%; height: 100%;
+        background: linear-gradient(135deg, #0D0B21, #1a1640);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        color: rgba(255,255,255,0.5); gap: 8px;
+    }
+    .banner-placeholder i { font-size: 28px; }
+    .banner-placeholder span { font-size: 13px; font-weight: 600; }
+    .banner-hover {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.45);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        opacity: 0; transition: 0.3s; color: white; gap: 6px;
+    }
+    .banner-upload:hover .banner-hover { opacity: 1; }
+    .banner-hover i { font-size: 24px; }
+    .banner-hover span { font-size: 13px; font-weight: 600; }
+
+    /* ---- AVATAR ---- */
+    .avatar-section {
+        display: flex; flex-direction: column; align-items: center;
+        margin-top: -50px; margin-bottom: 30px; position: relative; z-index: 5;
+    }
+    .avatar-wrap { position: relative; cursor: pointer; margin-bottom: 8px; }
+    .avatar-circle {
+        width: 110px; height: 110px; border-radius: 50%;
+        background: linear-gradient(135deg, #8B5CF6, #FF2D95);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-family: 'Outfit', sans-serif;
+        font-size: 44px; font-weight: 800;
+        box-shadow: 0 8px 25px rgba(139,92,246,0.3);
+        border: 4px solid white; overflow: hidden;
+    }
+    .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar-hover {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        border-radius: 50%; background: rgba(0,0,0,0.45);
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; transition: 0.3s; color: white; font-size: 22px;
+    }
+    .avatar-wrap:hover .avatar-hover { opacity: 1; }
+    .avatar-label { font-size: 13px; color: #8B5CF6; font-weight: 600; }
+    .file-name-preview {
+        font-size: 11px; color: #999; max-width: 200px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        text-align: center; margin-top: 4px;
+    }
+    .hidden-input { display: none; }
+
+    /* ---- FORM CARDS ---- */
+    .form-card {
+        background: white; border-radius: 20px; padding: 30px 28px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05); margin-bottom: 20px;
+    }
+    .form-card-title {
+        font-family: 'Outfit', sans-serif; font-size: 18px;
+        font-weight: 700; color: #111; margin-bottom: 4px;
+    }
+    .form-card-sub { font-size: 13px; color: #999; margin-bottom: 22px; }
+    .fg { margin-bottom: 22px; }
+    .fg label {
+        display: block; font-size: 12px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        color: #767676; margin-bottom: 8px;
+    }
+    .fg input, .fg textarea {
+        width: 100%; padding: 14px 16px;
+        border: 2px solid #e8e8e8; border-radius: 16px;
+        font-size: 16px; font-family: 'Plus Jakarta Sans', sans-serif;
+        color: #111; outline: none; transition: 0.3s; background: #fff;
+    }
+    .fg input:focus, .fg textarea:focus {
+        border-color: #8B5CF6; box-shadow: 0 0 0 4px rgba(139,92,246,0.1);
+    }
+    .fg textarea { resize: vertical; min-height: 120px; }
+    .fg .hint { font-size: 12px; color: #999; margin-top: 6px; }
+    .char-count { font-size: 12px; color: #b5b5b5; text-align: right; margin-top: 4px; }
+    .photo-hint {
+        background: #f8f8f8; border-radius: 12px; padding: 10px 14px;
+        font-size: 12px; color: #888; display: flex; align-items: center;
+        gap: 8px; margin-top: 12px;
+    }
+    .photo-hint i { color: #aaa; }
+
+    /* ---- BUTTONS ---- */
+    .edit-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
+    .btn-cancel {
+        padding: 14px 28px; border-radius: 25px; font-weight: 700; font-size: 15px;
+        border: none; cursor: pointer; background: #f0f0f0; color: #111;
+        font-family: 'Outfit', sans-serif; transition: 0.2s;
+        text-decoration: none; display: inline-flex; align-items: center;
+    }
+    .btn-cancel:hover { background: #e0e0e0; color: #111; }
+    .btn-save {
+        padding: 14px 32px; border-radius: 25px; font-weight: 700; font-size: 15px;
+        border: none; cursor: pointer; background: #8B5CF6; color: white;
+        font-family: 'Outfit', sans-serif; transition: 0.2s;
+    }
+    .btn-save:hover {
+        background: #7C3AED; transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(139,92,246,0.35);
+    }
+    .btn-save:active { transform: scale(0.97); }
+
+    @media (max-width: 600px) {
+        .edit-wrapper { padding: 30px 16px 60px; }
+        .edit-header h1 { font-size: 26px; }
+        .banner-upload { height: 150px; border-radius: 16px; }
+        .form-card { padding: 24px 20px; }
+        .edit-actions { flex-direction: column-reverse; }
+        .btn-cancel, .btn-save { width: 100%; justify-content: center; text-align: center; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-wrapper">
+    <div class="edit-header">
+        <h1>Editar Perfil</h1>
+        <p>Personaliza tu presencia en Ágora Art</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('cliente.editar_perfil') }}" enctype="multipart/form-data" id="editForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+        <!-- ========== BANNER ========== -->
+        <div class="form-card" style="padding: 20px;">
+            <div class="form-card-title">Foto de Portada</div>
+            <div class="form-card-sub">Se muestra como fondo en tu perfil</div>
+            <div class="banner-upload {{ 'has-img' if current_user.foto_banner }}" id="bannerArea" onclick="document.getElementById('foto_banner').click()">
+                {% if current_user.foto_banner %}
+                    <img src="{{ current_user.foto_banner }}" id="bannerPreview">
+                {% else %}
+                    <div class="banner-placeholder" id="bannerPlaceholder">
+                        <i class="fas fa-panorama"></i>
+                        <span>Haz clic para subir tu portada</span>
+                    </div>
+                    <img src="" id="bannerPreview" style="display:none;">
+                {% endif %}
+                <div class="banner-hover">
+                    <i class="fas fa-camera"></i>
+                    <span>Cambiar portada</span>
+                </div>
+            </div>
+            <input type="file" name="foto_banner" id="foto_banner" class="hidden-input" accept="image/png,image/jpeg,image/gif,image/webp">
+            <div class="photo-hint">
+                <i class="fas fa-info-circle"></i>
+                Recomendado: 1400×400px · JPG, PNG, GIF, WebP · Máx 16MB
+            </div>
+            <div class="file-name-preview" id="bannerName"></div>
+        </div>
+
+        <!-- ========== AVATAR ========== -->
+        <div class="form-card" style="padding-bottom: 20px;">
+            <div class="form-card-title">Foto de Perfil</div>
+            <div class="form-card-sub">Tu imagen principal, visible en toda la plataforma</div>
+            <div class="avatar-section">
+                <div class="avatar-wrap" onclick="document.getElementById('foto_perfil').click()">
+                    <div class="avatar-circle">
+                        {% if current_user.foto_perfil %}
+                            <img src="{{ current_user.foto_perfil }}" id="avatarPreview">
+                        {% else %}
+                            <span id="avatarLetter">{{ current_user.nombre[0]|upper }}</span>
+                            <img src="" id="avatarPreview" style="display:none;">
+                        {% endif %}
+                    </div>
+                    <div class="avatar-hover"><i class="fas fa-camera"></i></div>
+                </div>
+                <span class="avatar-label">Haz clic para cambiar</span>
+                <div class="file-name-preview" id="avatarName"></div>
+            </div>
+            <input type="file" name="foto_perfil" id="foto_perfil" class="hidden-input" accept="image/png,image/jpeg,image/gif,image/webp">
+            <div class="photo-hint" style="margin-top:0;">
+                <i class="fas fa-info-circle"></i>
+                Recomendado: 400×400px cuadrada · JPG, PNG, GIF, WebP
+            </div>
+        </div>
+
+        <!-- ========== INFO PERSONAL ========== -->
+        <div class="form-card">
+            <div class="form-card-title">Información Personal</div>
+            <div class="form-card-sub">Datos básicos de tu cuenta</div>
+            <div class="fg">
+                <label for="nombre">Nombre Completo</label>
+                <input type="text" id="nombre" name="nombre" value="{{ current_user.nombre }}" required maxlength="100">
+            </div>
+            <div class="fg">
+                <label for="username">Nombre de Usuario</label>
+                <input type="text" id="username" name="username" value="{{ current_user.username }}" required minlength="3" maxlength="50">
+                <div class="hint">Mínimo 3 caracteres</div>
+            </div>
+            <div class="fg">
+                <label for="email">Correo Electrónico</label>
+                <input type="email" id="email" name="email" value="{{ current_user.email }}" required>
+            </div>
+        </div>
+
+        <!-- ========== BIO ========== -->
+        <div class="form-card">
+            <div class="form-card-title">Sobre Ti</div>
+            <div class="form-card-sub">Cuéntale al mundo un poco sobre ti</div>
+            <div class="fg">
+                <label for="biografia">Biografía</label>
+                <textarea id="biografia" name="biografia" maxlength="500" placeholder="Me apasiona el arte...">{{ current_user.biografia or '' }}</textarea>
+                <div class="char-count"><span id="bioCount">{{ (current_user.biografia or '')|length }}</span>/500</div>
+            </div>
+        </div>
+
+        <!-- ========== ACCIONES ========== -->
+        <div class="edit-actions">
+            <a href="{{ url_for('cliente.dashboard') }}" class="btn-cancel">Cancelar</a>
+            <button type="submit" class="btn-save" id="saveBtn">
+                <i class="fas fa-check me-2"></i>Guardar Cambios
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Banner preview
+document.getElementById('foto_banner').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 16*1024*1024) { alert('Imagen demasiado grande (máx 16MB)'); return; }
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const preview = document.getElementById('bannerPreview');
+        const placeholder = document.getElementById('bannerPlaceholder');
+        preview.src = ev.target.result;
+        preview.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+        document.getElementById('bannerArea').classList.add('has-img');
+    };
+    reader.readAsDataURL(file);
+    document.getElementById('bannerName').textContent = file.name;
+});
+
+// Avatar preview
+document.getElementById('foto_perfil').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 16*1024*1024) { alert('Imagen demasiado grande (máx 16MB)'); return; }
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const preview = document.getElementById('avatarPreview');
+        const letter = document.getElementById('avatarLetter');
+        preview.src = ev.target.result;
+        preview.style.display = 'block';
+        if (letter) letter.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+    document.getElementById('avatarName').textContent = file.name;
+});
+
+// Bio counter
+document.getElementById('biografia').addEventListener('input', function() {
+    const c = document.getElementById('bioCount');
+    c.textContent = this.value.length;
+    c.style.color = this.value.length > 450 ? '#FF2D55' : '#b5b5b5';
+});
+
+// Submit animation
+document.getElementById('editForm').addEventListener('submit', function() {
+    const btn = document.getElementById('saveBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Guardando...';
+    btn.disabled = true;
+});
+</script>
+{% endblock %}
