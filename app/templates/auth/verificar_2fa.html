@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificación 2FA — Ágora Art</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            background-color: #0a0a0a;
+            border-radius: 16px;
+            border: 1px solid #222222;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .icon {
+            font-size: 40px;
+            color: #8b5cf6;
+            margin-bottom: 20px;
+        }
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        p {
+            color: #a0a0a0;
+            font-size: 14px;
+            margin: 0 0 30px 0;
+            line-height: 1.5;
+        }
+        .input-group {
+            margin-bottom: 24px;
+        }
+        .input-group input {
+            width: 100%;
+            background-color: #111111;
+            border: 1px solid #333333;
+            color: #ffffff;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: 8px;
+            font-weight: 700;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus {
+            border-color: #8b5cf6;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #8b5cf6;
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #7c3aed;
+        }
+        .error-message {
+            color: #ef4444;
+            font-size: 13px;
+            margin-bottom: 20px;
+            background-color: rgba(239, 68, 68, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="icon">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        <h2>Verificación de Seguridad</h2>
+        <p>Ingresa el código de 6 dígitos generado por tu aplicación de autenticación.</p>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-circle"></i> {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('auth.verificar_2fa') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="input-group">
+                <input type="text" name="token" id="token" 
+                       pattern="\d{6}" maxlength="6" inputmode="numeric" 
+                       placeholder="000000" required autocomplete="off" autofocus>
+            </div>
+            <button type="submit" class="btn">Verificar</button>
+        </form>
+    </div>
+
+</body>
+</html>

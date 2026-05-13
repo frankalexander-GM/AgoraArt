@@ -1,42 +1,10 @@
-# Flask y extensiones principales
-Flask==2.3.3
-Flask-SQLAlchemy==3.0.5
-Flask-Login==0.6.3
+Flask==3.1.1
+Flask-SQLAlchemy==3.1.1
 Flask-Bcrypt==1.0.1
-Flask-Migrate==4.0.5
-Flask-WTF==1.1.1
-WTForms==3.0.1
-
-# Base de datos SQLite (incluido en Python, pero SQLAlchemy lo necesita)
-# No se necesita driver adicional para SQLite
-
-# Validación y seguridad
-email-validator==2.0.0
-Werkzeug==2.3.7
-
-# Manejo de archivos y uploads
-Pillow==10.0.1
-
-# Utilidades de desarrollo
-python-dotenv==1.0.0
-gunicorn==21.2.0
-
-# Testing (opcional)
-pytest==7.4.2
-pytest-flask==1.2.0
-pytest-cov==4.1.0
-
-# Monitoreo y logging
-blinker==1.6.3
-
-# CORS si se necesita API frontend
-Flask-CORS==4.0.0
-
-# Manejo de fechas y horas
-python-dateutil==2.8.2
-
-# Email (para newsletters)
-Flask-Mail==0.9.1
-
-# Archivos estáticos y compresión
-Flask-Compress==1.13
+Flask-Login==0.6.3
+Flask-Migrate==4.1.0
+Flask-WTF==1.2.2
+pyotp==2.9.0
+qrcode==8.0
+Pillow==11.2.1
+gunicorn==23.0.0

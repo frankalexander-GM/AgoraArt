@@ -521,17 +521,18 @@
     <!-- Acciones (Botones) -->
     <div class="profile-actions" style="display: flex; justify-content: center; gap: 8px; margin-bottom: 40px;">
         <!-- Compartir -->
-        <div class="dropdown">
-            <button class="btn-pin btn-pin-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-share-alt me-2"></i> Compartir perfil
+        <div class="settings-gear">
+            <button class="gear-btn" id="shareBtn" title="Compartir perfil">
+                <i class="fas fa-share-alt gear-icon"></i> Compartir perfil
             </button>
-            <ul class="dropdown-menu shadow border-0" style="border-radius: 12px; overflow: hidden;">
-                <li><a class="dropdown-item py-2" href="#" onclick="window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent('¡Mira mis colecciones en Ágora Art! ' + window.location.href), '_blank'); return false;"><i class="fab fa-whatsapp me-2" style="color: #25D366;"></i> WhatsApp</a></li>
-                <li><a class="dropdown-item py-2" href="#" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.href), '_blank'); return false;"><i class="fab fa-facebook me-2" style="color: #1877F2;"></i> Facebook</a></li>
-                <li><a class="dropdown-item py-2" href="#" onclick="window.open('https://twitter.com/intent/tweet?url=' + encodeURIComponent(window.location.href) + '&text=' + encodeURIComponent('¡Mira mis colecciones en Ágora Art!'), '_blank'); return false;"><i class="fab fa-twitter me-2" style="color: var(--agora-dark);"></i> X (Twitter)</a></li>
-                <li><hr class="dropdown-divider" style="border-color: var(--agora-gray);"></li>
-                <li><a class="dropdown-item py-2" href="#" onclick="navigator.clipboard.writeText(window.location.href); alert('Enlace copiado');"><i class="fas fa-link me-2"></i> Copiar Enlace</a></li>
-            </ul>
+            <div class="gear-dropdown" id="shareDropdown" style="left: 0; right: auto;">
+                <div class="gear-dropdown-title">Compartir</div>
+                <a href="#" onclick="window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent('¡Mira mis colecciones en Ágora Art! ' + window.location.href), '_blank'); return false;"><i class="fab fa-whatsapp" style="color: #25D366;"></i> WhatsApp</a>
+                <a href="#" onclick="window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(window.location.href), '_blank'); return false;"><i class="fab fa-facebook" style="color: #1877F2;"></i> Facebook</a>
+                <a href="#" onclick="window.open('https://twitter.com/intent/tweet?url=' + encodeURIComponent(window.location.href) + '&text=' + encodeURIComponent('¡Mira mis colecciones en Ágora Art!'), '_blank'); return false;"><i class="fab fa-twitter" style="color: var(--agora-dark);"></i> X (Twitter)</a>
+                <div class="gear-divider"></div>
+                <a href="#" onclick="navigator.clipboard.writeText(window.location.href); alert('Enlace copiado');"><i class="fas fa-link"></i> Copiar Enlace</a>
+            </div>
         </div>
         
         <!-- Engranaje de Configuración -->
@@ -648,6 +649,23 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    // ── Menú Compartir ──
+    const shareBtn = document.getElementById('shareBtn');
+    const shareDropdown = document.getElementById('shareDropdown');
+    if (shareBtn && shareDropdown) {
+        shareBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            shareDropdown.classList.toggle('open');
+            if (gearDropdown) gearDropdown.classList.remove('open');
+        });
+        document.addEventListener('click', function() {
+            shareDropdown.classList.remove('open');
+        });
+        shareDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+
     // ── Menú Engranaje ──
     const gearBtn = document.getElementById('gearBtn');
     const gearDropdown = document.getElementById('gearDropdown');
@@ -655,6 +673,7 @@ document.addEventListener("DOMContentLoaded", function() {
         gearBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             gearDropdown.classList.toggle('open');
+            if (shareDropdown) shareDropdown.classList.remove('open');
         });
         document.addEventListener('click', function() {
             gearDropdown.classList.remove('open');

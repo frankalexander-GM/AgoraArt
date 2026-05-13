@@ -1,11 +1,12 @@
 import os
+import secrets
 from datetime import timedelta
 
 class Config:
     """Configuración base de la aplicación"""
     
-    # Configuración básica
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-change-in-production'
+    # Clave secreta fuerte (genera una aleatoria si no hay variable de entorno)
+    SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
     
     # Configuración de base de datos
     basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
@@ -19,10 +20,13 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
     
-    # Configuración de sesión
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
-    SESSION_COOKIE_SECURE = False
+    # Configuración de sesión (seguridad)
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
     SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_NAME = '__agora_session'
+    WTF_CSRF_TIME_LIMIT = 3600  # CSRF token expira en 1 hora
     
     # Configuración de paginación
     ITEMS_PER_PAGE = 12
@@ -58,6 +62,8 @@ class ProductionConfig(Config):
     """Configuración para producción"""
     DEBUG = False
     SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=1)
     basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'art_platform_prod.db')

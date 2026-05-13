@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Demasiadas Solicitudes - Ágora Art{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-1" style="color: #8b5cf6;">🛡️ 429</h1>
+    <h2>Acceso Temporalmente Bloqueado</h2>
+    <p class="lead">Has realizado demasiadas solicitudes en poco tiempo.<br>Esto puede suceder por múltiples intentos de login fallidos o tráfico inusual.</p>
+    <p class="text-muted">Por tu seguridad, espera unos minutos antes de intentar de nuevo.</p>
+    <a href="{{ url_for('public.home') }}" class="btn btn-primary mt-3">Volver al Inicio</a>
+</div>
+{% endblock %}

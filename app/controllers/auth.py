@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import login_user, logout_user, login_required, current_user
 from app.factories.service_factory import get_service_factory
 
@@ -14,8 +14,8 @@ def login():
         return redirect(url_for('public.home'))
     
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
         remember = request.form.get('remember', False)
         
         # Obtener servicio de autenticación
@@ -26,6 +26,10 @@ def login():
         exitoso, usuario, mensaje_error = auth_service.login_usuario(email, password, remember)
         
         if exitoso:
+            if mensaje_error == '2fa_required':
+                session['pre_login_user_id'] = usuario.id_usuario
+                return redirect(url_for('auth.verificar_2fa'))
+            
             # Redirigir según rol
             if usuario.is_admin():
                 return redirect(url_for('admin.dashboard'))
@@ -38,6 +42,55 @@ def login():
     
     return render_template('auth/login.html')
 
+@auth_bp.route('/verificar-2fa', methods=['GET', 'POST'])
+def verificar_2fa():
+    """
+    Verificación de 2 pasos
+    """
+    if current_user.is_authenticated:
+        return redirect(url_for('public.home'))
+        
+    user_id = session.get('pre_login_user_id')
+    if not user_id:
+        return redirect(url_for('auth.login'))
+        
+    if request.method == 'POST':
+        # Sanitizar token: quitar espacios en blanco
+        token = request.form.get('token', '').strip()
+        
+        # Validar formato básico del token
+        if not token or not token.isdigit() or len(token) != 6:
+            flash('El código debe ser de 6 dígitos numéricos.', 'error')
+            return render_template('auth/verificar_2fa.html')
+        
+        service_factory = get_service_factory()
+        usuario_service = service_factory.get_usuario_service()
+        usuario = usuario_service.get_by_id(user_id)
+        
+        if not usuario or not usuario.secret_2fa:
+            flash('Error en la verificación de dos pasos.', 'error')
+            session.pop('pre_login_user_id', None)
+            return redirect(url_for('auth.login'))
+            
+        import pyotp
+        totp = pyotp.TOTP(usuario.secret_2fa)
+        if totp.verify(token):
+            # Token válido — limpiar sesión pre-login y autenticar
+            session.pop('pre_login_user_id', None)
+            login_user(usuario)
+            
+            # Redirigir según rol al dashboard correspondiente
+            if usuario.is_admin():
+                return redirect(url_for('admin.dashboard'))
+            elif usuario.is_artista():
+                return redirect(url_for('artista.dashboard'))
+            else:
+                return redirect(url_for('cliente.dashboard'))
+        else:
+            flash('Código inválido o expirado. Intenta de nuevo.', 'error')
+            
+    return render_template('auth/verificar_2fa.html')
+
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     """
@@ -49,12 +102,12 @@ def register():
     if request.method == 'POST':
         # Obtener datos del formulario
         data = {
-            'nombre': request.form.get('nombre'),
-            'username': request.form.get('username'),
-            'email': request.form.get('email'),
-            'password': request.form.get('password'),
-            'rol': request.form.get('rol', 'cliente'),
-            'biografia': request.form.get('biografia', '')
+            'nombre': request.form.get('nombre', '').strip(),
+            'username': request.form.get('username', '').strip(),
+            'email': request.form.get('email', '').strip(),
+            'password': request.form.get('password', ''),
+            'rol': request.form.get('rol', 'cliente').strip(),
+            'biografia': request.form.get('biografia', '').strip()
         }
         
         # Obtener servicio de autenticación
@@ -104,10 +157,10 @@ def editar_perfil():
     if request.method == 'POST':
         # Obtener datos del formulario
         data = {
-            'nombre': request.form.get('nombre'),
-            'username': request.form.get('username'),
-            'email': request.form.get('email'),
-            'biografia': request.form.get('biografia', '')
+            'nombre': request.form.get('nombre', '').strip(),
+            'username': request.form.get('username', '').strip(),
+            'email': request.form.get('email', '').strip(),
+            'biografia': request.form.get('biografia', '').strip()
         }
         
         # Validar datos
@@ -168,8 +221,14 @@ def cambiar_password():
         
         if not password_nueva:
             errores.append('La nueva contraseña es obligatoria')
-        elif len(password_nueva) < 6:
-            errores.append('La nueva contraseña debe tener al menos 6 caracteres')
+        elif len(password_nueva) < 8:
+            errores.append('La nueva contraseña debe tener al menos 8 caracteres')
+        elif not any(c.isupper() for c in password_nueva):
+            errores.append('La contraseña debe incluir al menos una mayúscula')
+        elif not any(c.isdigit() for c in password_nueva):
+            errores.append('La contraseña debe incluir al menos un número')
+        elif not any(c in '!@#$%^&*()_+-=[]{}|;:,.<>?' for c in password_nueva):
+            errores.append('La contraseña debe incluir al menos un carácter especial')
         
         if password_nueva != password_confirmar:
             errores.append('Las contraseñas nuevas no coinciden')
@@ -201,8 +260,14 @@ def verificar_email():
     """
     API para verificar si email ya existe
     """
-    email = request.json.get('email')
+    if not request.json:
+        return jsonify({'error': 'Solicitud inválida'}), 400
+    
+    email = (request.json.get('email', '') or '').strip().lower()
     exclude_id = request.json.get('exclude_id')
+    
+    if not email or '@' not in email:
+        return jsonify({'existe': False, 'mensaje': 'Email inválido'})
     
     service_factory = get_service_factory()
     auth_service = service_factory.get_auth_service()
@@ -219,8 +284,14 @@ def verificar_username():
     """
     API para verificar si username ya existe
     """
-    username = request.json.get('username')
+    if not request.json:
+        return jsonify({'error': 'Solicitud inválida'}), 400
+    
+    username = (request.json.get('username', '') or '').strip().lower()
     exclude_id = request.json.get('exclude_id')
+    
+    if not username or len(username) < 3:
+        return jsonify({'existe': False, 'mensaje': 'Username inválido'})
     
     service_factory = get_service_factory()
     auth_service = service_factory.get_auth_service()

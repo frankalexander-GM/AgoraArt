@@ -74,9 +74,10 @@ def usuarios():
     usuario_service = service_factory.get_usuario_service()
     
     # Obtener filtros
-    rol = request.args.get('rol')
-    estado = request.args.get('estado')
-    termino = request.args.get('q', '')
+    rol = request.args.get('rol', '').strip() or None
+    estado = request.args.get('estado', '').strip() or None
+    termino = request.args.get('q', '').strip()
+    if len(termino) > 100: termino = termino[:100]
     
     # Construir filtros
     filtros = {}
@@ -145,7 +146,8 @@ def obras():
     
     # Obtener filtros
     visible = request.args.get('visible')
-    termino = request.args.get('q', '')
+    termino = request.args.get('q', '').strip()
+    if len(termino) > 100: termino = termino[:100]
     
     # Construir filtros
     filtros = {}

@@ -1,10 +1,44 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-.venv/
-env/
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
 venv/
+env/
+.env
+
+# Database
 *.db
 *.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
-crear_admins.py
+Thumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+
+# Uploads (user content)
+app/static/uploads/
+
+# Secrets
+.env
+*.pem
+*.key
+
+# Misc
+actualizar_db.py

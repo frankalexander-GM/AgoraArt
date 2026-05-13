@@ -75,9 +75,9 @@ def api_obras():
     service_factory = get_service_factory()
     obra_service = service_factory.get_obra_service()
     
-    # Obtener parámetros
-    limit = request.args.get('limit', 20, type=int)
-    offset = request.args.get('offset', 0, type=int)
+    # Obtener parámetros (con límites de seguridad)
+    limit = min(request.args.get('limit', 20, type=int), 100)
+    offset = max(request.args.get('offset', 0, type=int), 0)
     categoria_id = request.args.get('categoria_id', type=int)
     artista_id = request.args.get('artista_id', type=int)
     
@@ -112,8 +112,9 @@ def api_buscar_obras():
     """
     API para buscar obras
     """
-    termino = request.args.get('q', '')
-    limit = request.args.get('limit', 20, type=int)
+    termino = request.args.get('q', '').strip()
+    if len(termino) > 100: termino = termino[:100]
+    limit = min(request.args.get('limit', 20, type=int), 100)
     
     if not termino:
         return jsonify({'error': 'Término de búsqueda requerido'}), 400
@@ -137,9 +138,9 @@ def api_artistas():
     service_factory = get_service_factory()
     usuario_service = service_factory.get_usuario_service()
     
-    # Obtener parámetros
-    limit = request.args.get('limit', 20, type=int)
-    offset = request.args.get('offset', 0, type=int)
+    # Obtener parámetros (con límites de seguridad)
+    limit = min(request.args.get('limit', 20, type=int), 100)
+    offset = max(request.args.get('offset', 0, type=int), 0)
     
     # Obtener artistas
     artistas = usuario_service.get_artistas_activos(limit=limit, offset=offset)
@@ -185,8 +186,9 @@ def api_buscar_artistas():
     """
     API para buscar artistas
     """
-    termino = request.args.get('q', '')
-    limit = request.args.get('limit', 20, type=int)
+    termino = request.args.get('q', '').strip()
+    if len(termino) > 100: termino = termino[:100]
+    limit = min(request.args.get('limit', 20, type=int), 100)
     
     if not termino:
         return jsonify({'error': 'Término de búsqueda requerido'}), 400

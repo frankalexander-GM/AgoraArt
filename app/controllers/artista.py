@@ -78,10 +78,10 @@ def editar_perfil():
     if request.method == 'POST':
         # Obtener datos del formulario
         data = {
-            'nombre': request.form.get('nombre'),
-            'username': request.form.get('username'),
-            'email': request.form.get('email'),
-            'biografia': request.form.get('biografia', '')
+            'nombre': request.form.get('nombre', '').strip(),
+            'username': request.form.get('username', '').strip(),
+            'email': request.form.get('email', '').strip(),
+            'biografia': request.form.get('biografia', '').strip()
         }
         
         # Validar y actualizar
@@ -124,9 +124,9 @@ def nueva_obra():
         # Obtener datos del formulario
         data = {
             'id_artista': current_user.id_usuario,
-            'titulo': request.form.get('titulo'),
-            'descripcion': request.form.get('descripcion', ''),
-            'tecnica': request.form.get('tecnica', ''),
+            'titulo': request.form.get('titulo', '').strip(),
+            'descripcion': request.form.get('descripcion', '').strip(),
+            'tecnica': request.form.get('tecnica', '').strip(),
             'id_categoria': request.form.get('categoria') or None,
             'visible': request.form.get('visible') == 'on'
         }
@@ -178,9 +178,9 @@ def editar_obra(obra_id):
     if request.method == 'POST':
         # Obtener datos del formulario
         data = {
-            'titulo': request.form.get('titulo'),
-            'descripcion': request.form.get('descripcion', ''),
-            'tecnica': request.form.get('tecnica', ''),
+            'titulo': request.form.get('titulo', '').strip(),
+            'descripcion': request.form.get('descripcion', '').strip(),
+            'tecnica': request.form.get('tecnica', '').strip(),
             'id_categoria': request.form.get('categoria') or None,
             'visible': request.form.get('visible') == 'on'
         }
@@ -308,7 +308,7 @@ def toggle_visibilidad_obra():
             'mensaje': 'Error al actualizar visibilidad'
         })
 
-@artista_bp.route('/volver-a-cliente', methods=['GET'])
+@artista_bp.route('/volver-a-cliente', methods=['POST'])
 @login_required
 @requiere_artista
 def volver_a_cliente():

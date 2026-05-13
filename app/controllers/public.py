@@ -36,7 +36,8 @@ def explorar():
     
     # Obtener filtros
     categoria_id = request.args.get('categoria', type=int)
-    termino = request.args.get('q', '')
+    termino = request.args.get('q', '').strip()
+    if len(termino) > 100: termino = termino[:100]
     page = request.args.get('page', 1, type=int)
     
     # Obtener obras con filtros
@@ -58,7 +59,8 @@ def artistas():
     usuario_service = service_factory.get_usuario_service()
     
     # Obtener filtros
-    termino = request.args.get('q', '')
+    termino = request.args.get('q', '').strip()
+    if len(termino) > 100: termino = termino[:100]
     page = request.args.get('page', 1, type=int)
     
     # Obtener artistas
@@ -239,7 +241,8 @@ def api_buscar():
     """
     API para búsqueda en tiempo real
     """
-    termino = request.args.get('q', '')
+    termino = request.args.get('q', '').strip()
+    if len(termino) > 100: termino = termino[:100]
     tipo = request.args.get('tipo', 'obras')  # 'obras', 'artistas', 'categorias'
     
     service_factory = get_service_factory()

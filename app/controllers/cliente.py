@@ -125,10 +125,10 @@ def editar_perfil():
     try:
         if request.method == 'POST':
             data = {
-                'nombre': request.form.get('nombre'),
-                'username': request.form.get('username'),
-                'email': request.form.get('email'),
-                'biografia': request.form.get('biografia', '')
+                'nombre': request.form.get('nombre', '').strip(),
+                'username': request.form.get('username', '').strip(),
+                'email': request.form.get('email', '').strip(),
+                'biografia': request.form.get('biografia', '').strip()
             }
             
             errores = []
@@ -249,9 +249,9 @@ def nuevo_lienzo():
     Crear nuevo moodboard
     """
     if request.method == 'POST':
-        nombre = request.form.get('nombre')
+        nombre = request.form.get('nombre', '').strip()
         
-        if not nombre.strip():
+        if not nombre:
             flash('El nombre del lienzo es obligatorio', 'error')
             return render_template('cliente/nuevo_lienzo.html')
         
@@ -317,12 +317,12 @@ def nueva_direccion():
         # Obtener datos del formulario
         data = {
             'id_usuario': current_user.id_usuario,
-            'nombre_receptor': request.form.get('nombre_receptor'),
-            'direccion': request.form.get('direccion'),
-            'ciudad': request.form.get('ciudad'),
-            'pais': request.form.get('pais'),
-            'codigo_postal': request.form.get('codigo_postal'),
-            'telefono': request.form.get('telefono')
+            'nombre_receptor': request.form.get('nombre_receptor', '').strip(),
+            'direccion': request.form.get('direccion', '').strip(),
+            'ciudad': request.form.get('ciudad', '').strip(),
+            'pais': request.form.get('pais', '').strip(),
+            'codigo_postal': request.form.get('codigo_postal', '').strip(),
+            'telefono': request.form.get('telefono', '').strip()
         }
         
         # Validar datos
@@ -567,7 +567,7 @@ def quitar_carrito():
         'mensaje': 'Producto quitado del carrito' if exitoso else 'Error al quitar'
     })
 
-@cliente_bp.route('/convertirse-en-artista', methods=['GET'])
+@cliente_bp.route('/convertirse-en-artista', methods=['POST'])
 @login_required
 @requiere_cliente
 def convertirse_en_artista():
@@ -632,3 +632,96 @@ def seguridad():
         return jsonify({'success': exitoso, 'message': mensaje})
 
     return render_template('cliente/seguridad.html')
+
+
+@cliente_bp.route('/desactivar-2fa', methods=['POST'])
+@login_required
+@requiere_cliente
+def desactivar_2fa():
+    """Ruta para desactivar 2FA verificando el token"""
+    import pyotp
+    token = request.json.get('token')
+    
+    if not token:
+        return jsonify({'success': False, 'message': 'Token no proporcionado'})
+        
+    usuario = current_user
+    if not getattr(usuario, 'secret_2fa', None) or not getattr(usuario, 'is_2fa_enabled', False):
+        return jsonify({'success': False, 'message': '2FA no está activado'})
+        
+    totp = pyotp.TOTP(usuario.secret_2fa)
+    if totp.verify(token):
+        service_factory = get_service_factory(db.session)
+        usuario_service = service_factory.get_usuario_service()
+        exito, _ = usuario_service.actualizar_usuario(usuario.id_usuario, {'is_2fa_enabled': False, 'secret_2fa': None})
+        
+        if exito:
+            return jsonify({'success': True, 'message': '2FA desactivado correctamente'})
+        else:
+            return jsonify({'success': False, 'message': 'Error al actualizar en la base de datos'})
+    else:
+        return jsonify({'success': False, 'message': 'Código inválido o expirado'})
+
+
+@cliente_bp.route('/activar-2fa', methods=['POST'])
+@login_required
+@requiere_cliente
+def activar_2fa():
+    """Genera un secret 2FA y retorna la URL para el QR"""
+    import pyotp
+    
+    # Generar secret nuevo
+    secret = pyotp.random_base32()
+    
+    # Guardar el secret en la DB (aún no activado)
+    service_factory = get_service_factory(db.session)
+    usuario_service = service_factory.get_usuario_service()
+    exito, _ = usuario_service.actualizar_usuario(current_user.id_usuario, {'secret_2fa': secret})
+    
+    if not exito:
+        return jsonify({'success': False, 'message': 'Error al generar el código'})
+    
+    # Generar URL para el QR
+    totp = pyotp.TOTP(secret)
+    otp_url = totp.provisioning_uri(
+        name=current_user.email,
+        issuer_name='AgoraArt'
+    )
+    
+    return jsonify({
+        'success': True,
+        'otp_url': otp_url,
+        'secret': secret
+    })
+
+
+@cliente_bp.route('/verificar-2fa-setup', methods=['POST'])
+@login_required
+@requiere_cliente
+def verificar_2fa_setup():
+    """Verifica el código TOTP y activa el 2FA"""
+    import pyotp
+    token = request.json.get('token')
+    
+    if not token:
+        return jsonify({'success': False, 'message': 'Token no proporcionado'})
+    
+    usuario = current_user
+    secret = getattr(usuario, 'secret_2fa', None)
+    
+    if not secret:
+        return jsonify({'success': False, 'message': 'Primero debes generar un código QR'})
+    
+    totp = pyotp.TOTP(secret)
+    if totp.verify(token):
+        service_factory = get_service_factory(db.session)
+        usuario_service = service_factory.get_usuario_service()
+        exito, _ = usuario_service.actualizar_usuario(usuario.id_usuario, {'is_2fa_enabled': True})
+        
+        if exito:
+            return jsonify({'success': True, 'message': '2FA activado correctamente'})
+        else:
+            return jsonify({'success': False, 'message': 'Error al activar en la base de datos'})
+    else:
+        return jsonify({'success': False, 'message': 'Código inválido. Verifica que lo hayas escaneado correctamente.'})
+

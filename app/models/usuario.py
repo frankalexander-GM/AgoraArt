@@ -40,6 +40,10 @@ class Usuario(UserMixin, db.Model):
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
     estado = db.Column(db.String(20), default='activo')  # activo, bloqueado
     
+    # 2FA
+    secret_2fa = db.Column(db.String(32), nullable=True)
+    is_2fa_enabled = db.Column(db.Boolean, default=False)
+    
     # Relaciones
     obras = db.relationship('Obra', backref='artista', lazy='dynamic', 
                            cascade='all, delete-orphan')
